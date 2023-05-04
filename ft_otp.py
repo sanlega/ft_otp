@@ -6,7 +6,7 @@
 #    By: slegaris <slegaris@student.42madrid.com>   +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/04/26 01:11:18 by slegaris          #+#    #+#              #
-#    Updated: 2023/04/26 16:04:32 by slegaris         ###   ########.fr        #
+#    Updated: 2023/05/02 19:44:54 by slegaris         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,6 +14,7 @@ import sys
 import time
 import hashlib
 import argparse
+import hmac
 
 def generate_key(input_file, output_file):
     try:
@@ -31,33 +32,36 @@ def generate_key(input_file, output_file):
         sys.exit(1)
 
     encrypted_key = hashlib.sha256(key.encode('utf-8')).hexdigest()
-    # print(f"Key: {encrypted_key}")
-    checksum = hashlib.md5(encrypted_key.encode('utf-8')).hexdigest()
+    print(f"Key: {encrypted_key}")
+    # checksum = hashlib.md5(encrypted_key.encode('utf-8')).hexdigest()
     # print(f"checksum: {checksum}")
 
     try:
         with open(output_file, 'w') as f:
-            f.write(encrypted_key + checksum)
+            # f.write(encrypted_key + checksum)
+            f.write(encrypted_key)
         print(f"Key was successfully saved in {output_file}.")
     except Exception as e:
         print(f"Error: Could not write to file '{output_file}': {str(e)}")
         sys.exit(1)
 
-def verify_checksum(key, checksum):
-    calculated_checksum = hashlib.md5(key.encode('utf-8')).hexdigest()
-    # print(f"calculated_checksum: {calculated_checksum}")
-    return calculated_checksum == checksum
+# def verify_checksum(key, checksum):
+#     calculated_checksum = hashlib.md5(key.encode('utf-8')).hexdigest()
+#     print(f"calculated_checksum: {calculated_checksum}")
+#     return calculated_checksum == checksum
+
 
 def get_otp(key, time_interval=30):
     current_time = int(time.time() // time_interval)
-    # print(f"Time: {current_time}")
-    hasher = hashlib.sha256()
-    # print(f"hasher: {hasher}")
-    hasher.update(str(current_time).encode('utf-8'))
-    hex_value = hasher.hexdigest()[:6]
-    # print(f"hashed output: {hex_value}")
+    print(f"Time: {current_time}")
+    key_bytes = bytes.fromhex(key)
+    msg = current_time.to_bytes(8, 'big')
+    hmac_sha1 = hmac.new(key_bytes, msg, hashlib.sha1)
+    hex_value = hmac_sha1.hexdigest()[:6]
+    print(f"hashed output: {hex_value}")
     six_digit_number = int(hex_value, 16) % 1000000
     return six_digit_number
+
 
 def print_colored(text, color):
     color_codes = {
@@ -89,8 +93,9 @@ def main():
         try:
             with open(args.key, 'r') as f:
                 content = f.read().strip()
-                key = content[:-32]
-                checksum = content[-32:]
+                key = content
+                # key = content[:-32]
+                # checksum = content[-32:]
         except FileNotFoundError:
             print(f"Error: File '{args.key}' not found.")
             sys.exit(1)
@@ -98,9 +103,9 @@ def main():
             print(f"Error: Could not read file '{args.key}': {str(e)}")
             sys.exit(1)
 
-        if not verify_checksum(key, checksum):
-            print("Error: The key file is corrupted or has been modified.")
-            sys.exit(1)
+        # if not verify_checksum(key, checksum):
+        #     print("Error: The key file is corrupted or has been modified.")
+        #     sys.exit(1)
 
         otp = get_otp(key)
         print(f"{print_colored('Your one time password:', 'red')} {print_colored(otp, 'cyan')}")
