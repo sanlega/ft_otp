@@ -1,20 +1,12 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    ft_otp.py                                          :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: slegaris <slegaris@student.42madrid.com>   +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/04/26 01:11:18 by slegaris          #+#    #+#              #
-#    Updated: 2023/05/04 18:18:01 by slegaris         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 import sys
 import time
 import hashlib
 import argparse
 import hmac
+import math
+import base64
+import struct
+import binascii
 
 def generate_key(input_file, output_file):
     try:
@@ -45,23 +37,25 @@ def generate_key(input_file, output_file):
         print(f"Error: Could not write to file '{output_file}': {str(e)}")
         sys.exit(1)
 
-# def verify_checksum(key, checksum):
-#     calculated_checksum = hashlib.md5(key.encode('utf-8')).hexdigest()
-#     print(f"calculated_checksum: {calculated_checksum}")
-#     return calculated_checksum == checksum
 
+def get_otp(key):
+    current_time = time.time()
+    time_step = 30
+    time_factor = math.floor(current_time / time_step)
 
-def get_otp(key, time_interval=30):
-    current_time = int(time.time() // time_interval)
-    # print(f"Time: {current_time}")
-    key_bytes = bytes.fromhex(key)
-    msg = current_time.to_bytes(8, byteorder='big')
-    hmac_sha1 = hmac.new(key_bytes, msg, hashlib.sha1)
-    hex_value = hmac_sha1.hexdigest()
-    # print(f"hashed output: {hex_value}")
-    six_digit_number = int(hex_value, 16) % 1000000
-    return six_digit_number
+    key_bytes = binascii.unhexlify(key)  # Use unhexlify to decode the key
+    time_bytes = struct.pack(">Q", time_factor)
+    sig = hmac.new(key_bytes, time_bytes, hashlib.sha1).digest()
 
+    offset = sig[19] & 0xf
+    extracted_bytes = sig[offset:offset+4]
+
+    int_digits = struct.unpack(">I", extracted_bytes)
+    int_code = int_digits[0] & 0x7fffffff
+
+    modded_code = int_code % 1000000
+
+    return "%06d" % modded_code
 
 def print_colored(text, color):
     color_codes = {
