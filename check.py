@@ -100,7 +100,8 @@ def main():
         #     sys.exit(1)
 
         otp = get_otp(key)
-        print(f"{print_colored('Your one time password:', 'red')} {print_colored(otp, 'cyan')}")
+        # print(f"{print_colored('Your one time password:', 'red')} {print_colored(otp, 'cyan')}")
+        print(otp)
         sys.exit(0)
 
     parser.print_help()
