@@ -41,7 +41,8 @@ def get_otp(key):
     time_step = 30
     time_factor = math.floor(current_time / time_step)
 
-    key_bytes = binascii.unhexlify(key)  # Use unhexlify to decode the key
+    # Use b32decode to decode the key
+    key_bytes = base64.b32decode(key.upper()) 
     time_bytes = struct.pack(">Q", time_factor)
     sig = hmac.new(key_bytes, time_bytes, hashlib.sha1).digest()
 
