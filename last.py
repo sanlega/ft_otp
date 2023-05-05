@@ -3,7 +3,6 @@ import time
 import hashlib
 import argparse
 import hmac
-import math
 import base64
 import struct
 import binascii
@@ -14,70 +13,65 @@ def generate_key(input_file, output_file):
         with open(input_file, 'r') as f:
             key = f.read().strip()
     except FileNotFoundError:
-        print(f"Error: File '{input_file}' not found.")
+        # print(f"Error: File '{input_file}' not found.")
         sys.exit(1)
     except Exception as e:
-        print(f"Error: Could not read file '{input_file}': {str(e)}")
+        # print(f"Error: Could not read file '{input_file}': {str(e)}")
         sys.exit(1)
 
     if len(key) < 64:
-        print("./ft_otp: error: key must be at least 64 hexadecimal characters.")
+        # print("./ft_otp: error: key must be at least 64 hexadecimal characters.")
         sys.exit(1)
 
-    # Decode the hex string into bytes and then use base32 encoding
-    key_bytes = bytes.fromhex(key)
-    b32key = base64.b32encode(key_bytes).decode('utf-8')
-    print(f"Key: {b32key}")
+    # Define a message to use in HMAC function
+    message = 'your_message'.encode('utf-8')
 
+    # Convert the hex key to bytes
+    key_bytes = binascii.unhexlify(key)
+
+    # Create a new hmac object using key_bytes and message
+    hmac_object = hmac.new(key_bytes, message, digestmod=hashlib.sha1)
+
+    # Get the hmac digest as a hexadecimal string
+    hmac_hexdigest = hmac_object.hexdigest()
+
+    # print(f"HMAC-SHA1 Digest: {hmac_hexdigest}")
+
+    # You may want to write the hmac digest to the output file
     try:
         with open(output_file, 'w') as f:
-            f.write(b32key)
-        print(f"Key was successfully saved in {output_file}.")
+            f.write(hmac_hexdigest)
     except Exception as e:
-        print(f"Error: Could not write to file '{output_file}': {str(e)}")
+        # print(f"Error: Could not write to file '{output_file}': {str(e)}")
         sys.exit(1)
 
 def is_base32(s):
     return all(c in string.ascii_uppercase + '234567' for c in s.upper())
 
-def get_otp(key):
-    if not is_base32(key):
-        print("Error: The key is not a valid base32 string.")
-        sys.exit(1)
-    
-    current_time = time.time()
-    time_step = 30
-    time_factor = math.floor(current_time / time_step)
+def get_otp(key, time_interval=30):
+    current_time = int(time.time() // time_interval)
+    # Convert the HMAC-SHA1 key from hexadecimal to bytes
+    key_bytes = binascii.unhexlify(key)
+    msg = current_time.to_bytes(8, byteorder='big')
+    hmac_sha1 = hmac.new(key_bytes, msg, hashlib.sha1)
+    hex_value = hmac_sha1.hexdigest()
+    six_digit_number = int(hex_value, 16) % 1000000
+    return six_digit_number
 
-    # Use b32decode to decode the key
-    key_bytes = base64.b32decode(key.upper()) 
-    time_bytes = struct.pack(">Q", time_factor)
-    sig = hmac.new(key_bytes, time_bytes, hashlib.sha1).digest()
-
-    offset = sig[19] & 0xf
-    extracted_bytes = sig[offset:offset+4]
-
-    int_digits = struct.unpack(">I", extracted_bytes)
-    int_code = int_digits[0] & 0x7fffffff
-
-    modded_code = int_code % 1000000
-
-    return "%06d" % modded_code
-
-def print_colored(text, color):
-    color_codes = {
-        'black': '30',
-        'red': '31',
-        'green': '32',
-        'yellow': '33',
-        'blue': '34',
-        'magenta': '35',
-        'cyan': '36',
-        'white': '37',
-        'reset': '0'
-    }
-
-    return f"\033[{color_codes[color]}m{text}\033[0m"
+# def print_colored(text, color):
+#     color_codes = {
+#         'black': '30',
+#         'red': '31',
+#         'green': '32',
+#         'yellow': '33',
+#         'blue': '34',
+#         'magenta': '35',
+#         'cyan': '36',
+#         'white': '37',
+#         'reset': '0'
+#     }
+#
+#     return f"\033[{color_codes[color]}m{text}\033[0m"
 
 def main():
     parser = argparse.ArgumentParser(description="Generate a one-time password.")
@@ -98,10 +92,10 @@ def main():
                 # key = content[:-32]
                 # checksum = content[-32:]
         except FileNotFoundError:
-            print(f"Error: File '{args.key}' not found.")
+            # print(f"Error: File '{args.key}' not found.")
             sys.exit(1)
         except Exception as e:
-            print(f"Error: Could not read file '{args.key}': {str(e)}")
+            # print(f"Error: Could not read file '{args.key}': {str(e)}")
             sys.exit(1)
 
         # if not verify_checksum(key, checksum):
