@@ -62,8 +62,7 @@ def get_otp(key, time_interval=30):
 #     color_codes = {
 #         'black': '30',
 #         'red': '31',
-#         'green': '32',
-#         'yellow': '33',
+#         'green': '32', 'yellow': '33',
 #         'blue': '34',
 #         'magenta': '35',
 #         'cyan': '36',

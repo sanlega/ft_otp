@@ -6,7 +6,7 @@
 #    By: slegaris <slegaris@student.42madrid.com>   +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/04/26 01:11:18 by slegaris          #+#    #+#              #
-#    Updated: 2023/05/04 18:18:01 by slegaris         ###   ########.fr        #
+#    Updated: 2023/05/22 02:37:28 by slegaris         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -80,8 +80,18 @@ def print_colored(text, color):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate a one-time password.")
-    parser.add_argument('-g', '--generate', metavar='INPUT_FILE', type=str, help='Generate a key from a hex file and save it in ft_otp.key.')
-    parser.add_argument('-k', '--key', metavar='KEY_FILE', type=str, help='Use a specific key file to generate OTP.')
+
+    parser.add_argument('-g',
+                        '--generate',
+                        metavar='INPUT_FILE',
+                        type=str,
+                        help='Generate a key from a hex file and save it in ft_otp.key.')
+
+    parser.add_argument('-k',
+                        '--key',
+                        metavar='KEY_FILE',
+                        type=str,
+                        help='Use a specific key file to generate OTP.')
 
     args = parser.parse_args()
 
